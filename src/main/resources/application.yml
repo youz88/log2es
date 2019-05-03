@@ -1,0 +1,25 @@
+myhost: 192.168.84.128
+
+server:
+  port: 8080
+
+database:
+  url:  jdbc:mysql://${myhost}:3306/draw?useSSL=false&useUnicode=true&characterEncoding=utf8&autoReconnect=true&zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true&statementInterceptors=com.youz.draw.util.ShowSqlInterceptor
+  userName: root
+  password: root
+  initialSize: 1
+  minIdle: 1
+  maxActive: 1
+  maxWait: 60000
+  timeBetweenEvictionRunsMillis: 60000
+  minEvictableIdleTimeMillis: 300000
+  validationQuery: SELECT 'x'
+  testWhileIdle: true
+  testOnBorrow: false
+  testOnReturn: false
+  filters: stat,wall
+
+log:
+  elasticsearch:
+    host: ${myhost}
+    port: 9300
