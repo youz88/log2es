@@ -6,16 +6,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link rel="stylesheet" href="//cdn.bootcss.com/bootstrap/3.3.5/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/assets/bootstrap-fileinput/css/fileinput.min.css">
+    <link rel="stylesheet" href="/assets/webuploader/webuploader.css">
     <style type="text/css">
-        /*body {*/
-            /*background-image: linear-gradient(45deg, #FA8BFF 0%, #2BD2FF 52%, #2BFF88 90%);*/
-        /*}*/
         .azure {
             background-image: linear-gradient(90deg, #FA8BFF 0%, #2BD2FF 52%, #2BFF88 90%);
         }
-        .upload-form{
-            box-shadow: 2px 2px 26px grey;
+
+        .input-label {
+            font-size: 25px;
+        }
+
+        .wu-example {
+            position: relative;
+            padding: 45px 15px 15px;
+            margin: 15px 0;
+            background-color: #fafafa;
+            box-shadow: inset 0 3px 6px rgba(0, 0, 0, .05);
+            border-color: #e5e5e5 #eee #eee;
+            border-style: solid;
+            border-width: 1px 0;
+        }
+
+        #picker {
+            display: inline-block;
+            line-height: 13px;
+            vertical-align: middle;
+            margin: 0 12px 0 0;
+        }
+
+        .uploader-list {
+            width: 100%;
+            overflow: hidden;
         }
     </style>
     <title>主页</title>
@@ -24,11 +45,28 @@
 <body class="azure">
     <div class="container">
         <div class="col-md-12">
-            <form class="upload-form">
-                <div class="form-group">
-                    <input type="file" name="file" id="fileUpload" multiple class="file-loading" />
+            <div class="form-group">
+                <div id="uploader" class="wu-example">
+                    <!--用来存放文件信息-->
+                    <div id="thelist" class="uploader-list"></div>
+                    <div class="btns">
+                        <div id="picker">选择文件</div>
+                    </div>
                 </div>
-            </form>
+            </div>
+            <div class="form-group">
+                <label for="index" class="col-sm-1 input-label">Index：</label>
+                <div class="col-sm-5">
+                    <input type="text" class="form-control" id="index" placeholder="请输入索引">
+                </div>
+                <label for="type" class="col-sm-1 input-label">Type：</label>
+                <div class="col-sm-5">
+                    <input type="text" class="form-control" id="type" placeholder="请输入类型">
+                </div>
+            </div>
+            <div class="form-group">
+                <button id="ctlBtn" class="btn btn-default form-control">开始上传</button>
+            </div>
         </div>
     </div>
 
@@ -38,54 +76,69 @@
     </footer>
     <script src="//cdn.bootcss.com/jquery/1.11.3/jquery.min.js"></script>
     <script src="//cdn.bootcss.com/twitter-bootstrap/3.3.5/js/bootstrap.min.js"></script>
-    <script src="/assets/bootstrap-fileinput/js/fileinput.min.js"></script>
-    <script src="/assets/bootstrap-fileinput/js/locales/zh.js"></script>
+    <script src="//cdn.staticfile.org/webuploader/0.1.0/webuploader.html5only.min.js"></script>
+    <script src="/assets/webuploader/webuploader.min.js"></script>
     <script>
-        $(function(){
-            var oFileInput = new FileInput();
-            oFileInput.Init("fileUpload", "");
-        })
+        $(function () {
+            var state = 'pending';
+            var $list = $("#thelist");
+            var $btn = $("#ctlBtn");
 
-        var FileInput = function () {
-            var oFile = new Object();
+            // 上传文件初始化
+            var uploader = WebUploader.create({
+                // 文件接收服务端。
+                server: '/upload',
+                // 选择文件的按钮。可选。
+                // 内部根据当前运行是创建，可能是input元素，也可能是flash.
+                pick: '#picker',
+                resize: false,
+                multiple: true,
+                // chunked: true // 是否要分片处理大文件上传。
+            });
 
-            //初始化fileinput控件（第一次初始化）
-            oFile.Init = function(ctrlName, uploadUrl) {
-                var control = $('#' + ctrlName);
+            uploader.on('fileQueued', function (file) {
+                $list.append('<div id="' + file.id + '" class="item">' +
+                    '<h4 class="info">【' + file.name + '】</h4> ' +
+                    '<p class="state">等待上传...</p> ' +
+                    '</div>');
+            });
+            uploader.on('uploadProgress',
+                function (file, percentage) {
+                    var $li = $('#' + file.id), $percent = $li
+                        .find('.progress .progress-bar');
 
-                //初始化上传控件的样式
-                control.fileinput({
-                    language: 'zh', //设置语言
-                    uploadUrl: '/upload', //上传的地址
-                    allowedFileExtensions: ['jpg', 'gif', 'png'],//接收的文件后缀
-                    showUpload: true, //是否显示上传按钮
-                    showCaption: false,//是否显示标题
-                    browseClass: "btn btn-primary", //按钮样式
-                    // initialPreviewDelimiter: ',',
-                    maxFileSize: 0,//单位为kb，如果为0表示不限制文件大小
-                    maxFileCount: 10, //表示允许同时上传的最大文件个数
-                    enctype: 'multipart/form-data',
-                    validateInitialCount:true,
-                    previewFileIcon: "<i class='glyphicon glyphicon-king'></i>",
-                    msgFilesTooMany: "选择上传的文件数量({n}) 超过允许的最大数值{m}！",
-                });
-
-                //导入文件上传完成之后的事件
-                $("#txt_file").on("fileuploaded", function (event, data, previewId, index) {
-                    $("#myModal").modal("hide");
-                    var data = data.response.lstOrderImport;
-                    if (data == undefined) {
-                        toastr.error('文件格式类型不正确');
-                        return;
+                    // 避免重复创建
+                    if (!$percent.length) {
+                        $percent = $(
+                            '<div class="progress progress-striped active">'
+                            + '<div class="progress-bar progress-bar-success" role="progressbar" style="width: 0%">'
+                            + '</div>' + '</div>')
+                            .appendTo($li).find('.progress-bar');
                     }
-                    //1.初始化表格
-                    var oTable = new TableInit();
-                    oTable.Init(data);
-                    $("#div_startimport").show();
+                    $li.find('p.state').text('上传中');
+                    $percent.css('width', percentage * 100 + '%');
                 });
-            }
-            return oFile;
-        };
+
+            uploader.on('uploadSuccess', function (file) {
+                $('#' + file.id).find('p.state').text('已上传');
+            });
+
+            uploader.on('uploadSuccess', function (file) {
+                $('#' + file.id).find('p.state').text('已上传');
+            });
+
+            uploader.on('uploadError', function (file) {
+                $('#' + file.id).find('p.state').text('上传出错');
+            });
+
+            $btn.on('click', function () {
+                if (state === 'uploading') {
+                    uploader.stop();
+                } else {
+                    uploader.upload();
+                }
+            });
+        })
     </script>
 </body>
 

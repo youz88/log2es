@@ -2,6 +2,7 @@ myhost: 192.168.84.128
 
 server:
   port: 8080
+  connection-timeout: 180000
 
 database:
   url:  jdbc:mysql://${myhost}:3306/draw?useSSL=false&useUnicode=true&characterEncoding=utf8&autoReconnect=true&zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true&statementInterceptors=com.youz.draw.util.ShowSqlInterceptor
@@ -23,3 +24,9 @@ log:
   elasticsearch:
     host: ${myhost}
     port: 9300
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: -1
+      max-request-size: -1
