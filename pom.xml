@@ -24,7 +24,7 @@
 
         <elasticsearch.version>5.4.0</elasticsearch.version>
 
-        <commons-lang3.version>3.4</commons-lang3.version>
+        <commons-lang3.version>3.18.0</commons-lang3.version>
     </properties>
 
     <dependencies>
